@@ -3,9 +3,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Copy, Check, Terminal } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { getAccessToken } from "@/lib/api";
+import { getAccessToken, getRefreshToken } from "@/lib/api";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://api.example.com";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 function CodeBlock({ title, code, tag }) {
   const [copied, setCopied] = useState(false);
@@ -50,37 +50,52 @@ function CodeBlock({ title, code, tag }) {
 
 export default function APIPlaygroundPage() {
   const token = getAccessToken() || "<YOUR_ACCESS_TOKEN>";
+  const refreshToken = getRefreshToken() || "<YOUR_REFRESH_TOKEN>";
 
   const examples = [
     {
-      title: "Add Data (Embed)",
+      title: "Embed Text",
       tag: "POST",
-      code: `curl -X POST ${API_BASE}/data/embed \\
+      code: `curl -X POST ${API_BASE}/api/train/embed \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer ${token}" \\
   -d '{
-    "text": "Your text content to embed",
-    "metadata": {
-      "source": "api",
-      "category": "example"
-    }
+    "input": "Your text content to embed"
   }'`,
     },
     {
       title: "Semantic Search",
       tag: "POST",
-      code: `curl -X POST ${API_BASE}/data/search \\
+      code: `curl -X POST ${API_BASE}/api/train/search \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer ${token}" \\
   -d '{
-    "query": "your search query",
+    "input": "your search query",
     "topK": 5
   }'`,
     },
     {
-      title: "List Data",
+      title: "Monitoring Summary",
       tag: "GET",
-      code: `curl -X GET ${API_BASE}/data/list \\
+      code: `curl -X GET "${API_BASE}/api/train/monitoring/summary?days=30" \\
+  -H "Authorization: Bearer ${token}"`,
+    },
+    {
+      title: "Daily Stats",
+      tag: "GET",
+      code: `curl -X GET "${API_BASE}/api/train/monitoring/daily?days=30" \\
+  -H "Authorization: Bearer ${token}"`,
+    },
+    {
+      title: "API Logs",
+      tag: "GET",
+      code: `curl -X GET "${API_BASE}/api/train/monitoring/logs?page=1&limit=20" \\
+  -H "Authorization: Bearer ${token}"`,
+    },
+    {
+      title: "Request Type Breakdown",
+      tag: "GET",
+      code: `curl -X GET "${API_BASE}/api/train/monitoring/by-type?days=30" \\
   -H "Authorization: Bearer ${token}"`,
     },
     {
@@ -88,19 +103,7 @@ export default function APIPlaygroundPage() {
       tag: "POST",
       code: `curl -X POST ${API_BASE}/api/v1/auth/refresh \\
   -H "Content-Type: application/json" \\
-  -d '{"refreshToken": "<YOUR_REFRESH_TOKEN>"}'`,
-    },
-    {
-      title: "Get Usage Stats",
-      tag: "GET",
-      code: `curl -X GET ${API_BASE}/usage \\
-  -H "Authorization: Bearer ${token}"`,
-    },
-    {
-      title: "Get API Logs",
-      tag: "GET",
-      code: `curl -X GET "${API_BASE}/logs?page=1&limit=20" \\
-  -H "Authorization: Bearer ${token}"`,
+  -d '{"refreshToken": "${refreshToken}"}'`,
     },
   ];
 

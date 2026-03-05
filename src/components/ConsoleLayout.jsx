@@ -15,18 +15,15 @@ import {
   Sun,
   ChevronDown,
   ChevronUp,
-  HelpCircle,
-  Key,
 } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { analyticsApi } from "@/lib/api";
+import { providerApi } from "@/lib/api";
 
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "API Keys", url: "/settings", icon: Key },
   { title: "Data Explorer", url: "/data", icon: Database },
   { title: "Semantic Search", url: "/search", icon: Search },
   { title: "API Playground", url: "/playground", icon: Terminal },
@@ -36,7 +33,6 @@ const navItems = [
 
 const bottomNavItems = [
   { title: "Settings", url: "/settings", icon: Settings },
-  { title: "Help", url: "/logs", icon: HelpCircle },
 ];
 
 function UsageBar({ label, used, total, unit }) {
@@ -63,8 +59,8 @@ export default function ConsoleLayout() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const { data: usage } = useQuery({
-    queryKey: ["usage"],
-    queryFn: () => analyticsApi.usage().then((r) => r.data),
+    queryKey: ["provider-summary-sidebar"],
+    queryFn: () => providerApi.summary(30).then((r) => r.data?.data ?? r.data),
     retry: false,
     staleTime: 60_000,
   });
@@ -72,7 +68,7 @@ export default function ConsoleLayout() {
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   const isDark = theme === "dark";
-  const tokens = usage?.totalSearches || 0;
+  const tokens = usage?.totalTokens || 0;
   const searches = usage?.totalSearches || 0;
   const tokenLimit = 1_000_000;
   const searchLimit = 10_000;
@@ -83,7 +79,7 @@ export default function ConsoleLayout() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* ── Sidebar ── */}
-      <aside className="w-52 flex-shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar">
+      <aside className="w-52 flex-shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar h-screen sticky top-0">
 
         {/* Brand + plan */}
         <div className="px-4 pt-4 pb-3 border-b border-sidebar-border">

@@ -75,18 +75,20 @@ export const authApi = {
 };
 
 export const dataApi = {
-  embed: (text, metadata) =>
-    api.post("/data/embed", { text, metadata }),
-  search: (query, topK = 5, filters) =>
-    api.post("/data/search", { query, topK, filters }),
+  embed: (input) =>
+    api.post("/api/train/embed", { input }),
+  search: (input, topK = 5) =>
+    api.post("/api/train/search", { input, topK }),
   list: (params) =>
-    api.get("/data/list", { params }),
+    api.get("/api/train/list", { params }),
 };
 
-export const analyticsApi = {
-  usage: () => api.get("/usage"),
-  logs: (params) =>
-    api.get("/logs", { params }),
+export const providerApi = {
+  summary: (days = 30) => api.get("/api/train/monitoring/summary", { params: { days } }),
+  daily:   (days = 30) => api.get("/api/train/monitoring/daily",   { params: { days } }),
+  logs:    (params)     => api.get("/api/train/monitoring/logs",    { params }),
+  byType:  (days = 30) => api.get("/api/train/monitoring/by-type", { params: { days } }),
+  similarityMatrix: (limit = 30) => api.get("/api/train/similarity-matrix", { params: { limit } }),
 };
 
 export default api;
