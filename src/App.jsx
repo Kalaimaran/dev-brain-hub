@@ -5,19 +5,23 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
-import ConsoleLayout from "@/components/ConsoleLayout";
+import BrainLayout from "@/layout/BrainLayout";
 import LoginPage from "@/pages/Login";
 import RegisterPage from "@/pages/Register";
-import DashboardPage from "@/pages/Dashboard";
-import DataExplorerPage from "@/pages/DataExplorer";
-import SemanticSearchPage from "@/pages/SemanticSearch";
-import APIPlaygroundPage from "@/pages/APIPlayground";
-import UsagePage from "@/pages/Usage";
-import ApiLogsPage from "@/pages/ApiLogs";
-import SettingsPage from "@/pages/Settings";
+import DashboardPage from "@/pages/brain/DashboardPage";
+import TerminalPage from "@/pages/brain/TerminalPage";
+import AIConversationsPage from "@/pages/brain/AIConversationsPage";
+import WebActivityPage from "@/pages/brain/WebActivityPage";
+import TranscriptsPage from "@/pages/brain/TranscriptsPage";
+import NotesPage from "@/pages/brain/NotesPage";
+import IssuesPage from "@/pages/brain/IssuesPage";
+import GlobalSearchPage from "@/pages/brain/GlobalSearchPage";
+import ProfilePage from "@/pages/brain/ProfilePage";
 import NotFound from "@/pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
+});
 
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
@@ -28,17 +32,19 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/login"    element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route element={<ConsoleLayout />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/data" element={<DataExplorerPage />} />
-                <Route path="/search" element={<SemanticSearchPage />} />
-                <Route path="/playground" element={<APIPlaygroundPage />} />
-                <Route path="/usage" element={<UsagePage />} />
-                <Route path="/logs" element={<ApiLogsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/"         element={<Navigate to="/dashboard" replace />} />
+              <Route element={<BrainLayout />}>
+                <Route path="/dashboard"   element={<DashboardPage />} />
+                <Route path="/terminal"    element={<TerminalPage />} />
+                <Route path="/ai"          element={<AIConversationsPage />} />
+                <Route path="/web"         element={<WebActivityPage />} />
+                <Route path="/transcripts" element={<TranscriptsPage />} />
+                <Route path="/notes"       element={<NotesPage />} />
+                <Route path="/issues"      element={<IssuesPage />} />
+                <Route path="/search"      element={<GlobalSearchPage />} />
+                <Route path="/profile"     element={<ProfilePage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

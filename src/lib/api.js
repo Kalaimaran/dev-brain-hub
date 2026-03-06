@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 const ACCESS_KEY  = "dn_access_token";
 const REFRESH_KEY = "dn_refresh_token";
 
-// ─── In-memory mirrors (so we don't hit localStorage on every request) ───────
+// ─── In-memory mirrors ────────────────────────────────────────────────────────
 let _access  = localStorage.getItem(ACCESS_KEY);
 let _refresh = localStorage.getItem(REFRESH_KEY);
 
@@ -51,7 +51,6 @@ api.interceptors.response.use(
         const res = await axios.post(`${API_BASE}/api/v1/auth/refresh`, {
           refreshToken: _refresh,
         });
-        // Response shape: { success, data: { accessToken, refreshToken, ... } }
         const payload = res.data?.data ?? res.data;
         setTokens(payload.accessToken, payload.refreshToken ?? _refresh);
         original.headers.Authorization = `Bearer ${payload.accessToken}`;
@@ -65,30 +64,69 @@ api.interceptors.response.use(
   }
 );
 
-// ─── API modules ──────────────────────────────────────────────────────────────
+// ─── Auth ─────────────────────────────────────────────────────────────────────
 export const authApi = {
   register: (username, email, password) =>
     api.post("/api/v1/auth/register", { username, email, password }),
   login: (username, password) =>
     api.post("/api/v1/auth/login", { username, password }),
+  me: () =>
+    api.get("/api/v1/auth/me"),
+  updateProfile: (body) =>
+    api.put("/api/v1/auth/me", body),
+  changePassword: (body) =>
+    api.post("/api/v1/auth/me/password", body),
   logout: () => api.post("/api/v1/auth/logout"),
 };
 
-export const dataApi = {
-  embed: (input) =>
-    api.post("/api/train/embed", { input }),
-  search: (input, topK = 5) =>
-    api.post("/api/train/search", { input, topK }),
-  list: (params) =>
-    api.get("/api/train/list", { params }),
+// ─── DevBrain — read queries ──────────────────────────────────────────────────
+export const brainApi = {
+  // Dashboard
+  dailySummary:  (date)   => api.get("/api/events/summary/daily",   { params: { date } }),
+  rangeSummary:  (range)  => api.get("/api/events/summary/range",   { params: { range } }),
+
+  // Terminal history
+  terminal:      (params) => api.get("/api/events/terminal",        { params }),
+
+  // AI conversations
+  conversations: (params) => api.get("/api/events/conversations",   { params }),
+
+  // Web activity
+  webActivity:   (params) => api.get("/api/events/web-activity",    { params }),
+  webStats:      (range)  => api.get("/api/events/web-stats",       { params: { range } }),
+
+  // Page transcripts
+  transcripts:   (params) => api.get("/api/events/transcripts",     { params }),
+
+  // Global search
+  search:        (params) => api.get("/api/events/search",          { params }),
+
+  // Extension sidebar stats
+  stats:         ()       => api.get("/api/events/stats"),
+
+  // Profile — extension/plugin last sync timestamps
+  profileSync:   ()       => api.get("/api/events/profile/sync"),
+
+  // Transcript full text by ID
+  transcript:    (id)     => api.get(`/api/events/transcripts/${id}`),
 };
 
-export const providerApi = {
-  summary: (days = 30) => api.get("/api/train/monitoring/summary", { params: { days } }),
-  daily:   (days = 30) => api.get("/api/train/monitoring/daily",   { params: { days } }),
-  logs:    (params)     => api.get("/api/train/monitoring/logs",    { params }),
-  byType:  (days = 30) => api.get("/api/train/monitoring/by-type", { params: { days } }),
-  similarityMatrix: (limit = 30) => api.get("/api/train/similarity-matrix", { params: { limit } }),
+// ─── Notes ────────────────────────────────────────────────────────────────────
+export const notesApi = {
+  list:   (params)    => api.get("/api/notes",       { params }),
+  get:    (id)        => api.get(`/api/notes/${id}`),
+  create: (body)      => api.post("/api/notes",       body),
+  update: (id, body)  => api.put(`/api/notes/${id}`,  body),
+  remove: (id)        => api.delete(`/api/notes/${id}`),
+};
+
+// ─── Issues / KB ──────────────────────────────────────────────────────────────
+export const issuesApi = {
+  list:   (params)    => api.get("/api/issues",        { params }),
+  get:    (id)        => api.get(`/api/issues/${id}`),
+  create: (body)      => api.post("/api/issues",        body),
+  update: (id, body)  => api.put(`/api/issues/${id}`,   body),
+  remove: (id)        => api.delete(`/api/issues/${id}`),
 };
 
 export default api;
