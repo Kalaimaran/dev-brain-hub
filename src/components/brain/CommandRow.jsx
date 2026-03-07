@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import {
   ChevronDown, ChevronRight, GitBranch, Package, Wrench, Terminal, Bot,
-  Globe, Box, Code, Network, Copy, Check, GitCommit, FileCode, ArrowRight,
+  Globe, Box, Code, Network, Copy, Check, GitCommit, FileCode, ArrowRight, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -108,23 +108,23 @@ function FileDiff({ fileDiff }) {
       {/* File header bar */}
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-1.5 bg-muted/30 hover:bg-muted/40 transition-colors text-left border-b border-border/40"
+        className="w-full flex items-center gap-2 px-3 py-1.5 bg-zinc-800/60 hover:bg-zinc-700/60 transition-colors text-left border-b border-border/40"
       >
         {open
           ? <ChevronDown  className="h-3 w-3 text-muted-foreground flex-shrink-0" />
           : <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
-        <FileCode className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+        <FileCode className="h-3 w-3 text-orange-400 flex-shrink-0" />
         <span className="font-mono text-xs text-foreground flex-1 truncate">{filename}</span>
         <span className="text-[10px] text-muted-foreground/60 flex-shrink-0">{totalLines} lines</span>
       </button>
 
       {/* Diff lines */}
       {open && (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto bg-zinc-950/40">
           {fileDiff.hunks.map((hunk, hi) => (
             <div key={hi}>
               {/* Hunk header @@ line */}
-              <div className="px-3 py-0.5 bg-blue-500/5 border-y border-blue-500/20 font-mono text-[10px] text-blue-300/60 select-none">
+              <div className="px-3 py-0.5 bg-blue-900/30 border-y border-blue-800/40 font-mono text-[10px] text-blue-300/80 select-none">
                 {hunk.header}
               </div>
               {/* Diff lines */}
@@ -133,17 +133,18 @@ function FileDiff({ fileDiff }) {
                   key={li}
                   className={cn(
                     "flex items-start font-mono text-[11px] leading-5 whitespace-pre select-text",
-                    line.type === "add" && "bg-emerald-500/10",
-                    line.type === "del" && "bg-red-500/10",
+                    line.type === "add" && "bg-green-900/50",
+                    line.type === "del" && "bg-red-900/50",
+                    line.type === "ctx" && "bg-transparent",
                   )}
                 >
                   {/* +/- gutter */}
                   <span
                     className={cn(
-                      "w-5 flex-shrink-0 text-center select-none",
-                      line.type === "add" && "text-emerald-400 bg-emerald-500/20",
-                      line.type === "del" && "text-red-400 bg-red-500/20",
-                      line.type === "ctx" && "text-muted-foreground/30",
+                      "w-6 flex-shrink-0 text-center select-none font-bold",
+                      line.type === "add" && "text-green-400 bg-green-800/60",
+                      line.type === "del" && "text-red-400 bg-red-800/60",
+                      line.type === "ctx" && "text-zinc-600",
                     )}
                   >
                     {line.type === "add" ? "+" : line.type === "del" ? "−" : " "}
@@ -152,9 +153,9 @@ function FileDiff({ fileDiff }) {
                   <span
                     className={cn(
                       "px-2 flex-1",
-                      line.type === "add" && "text-emerald-200",
-                      line.type === "del" && "text-red-300",
-                      line.type === "ctx" && "text-muted-foreground/70",
+                      line.type === "add" && "text-green-200",
+                      line.type === "del" && "text-red-200",
+                      line.type === "ctx" && "text-zinc-400",
                     )}
                   >
                     {line.content || "\u00a0"}
@@ -169,25 +170,71 @@ function FileDiff({ fileDiff }) {
   );
 }
 
-function DiffViewer({ patch }) {
+/**
+ * Full-height right-side drawer showing the unified diff for a commit.
+ */
+function DiffSidePanel({ patch, commitMessage, commitHash, onClose }) {
   const files = useMemo(() => parseDiff(patch), [patch]);
-  if (!files.length) return null;
 
   return (
-    <div className="space-y-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
-        Diff — {files.length} file{files.length !== 1 ? "s" : ""}
-      </p>
-      {files.map((f, i) => (
-        <FileDiff key={i} fileDiff={f} />
-      ))}
-    </div>
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Side panel */}
+      <div className="fixed right-0 top-0 h-screen w-[52vw] min-w-[440px] max-w-[820px] bg-card border-l border-border z-50 flex flex-col shadow-2xl">
+
+        {/* Panel header */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20 flex-shrink-0">
+          <GitBranch className="h-4 w-4 text-orange-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            {commitMessage && (
+              <p className="text-sm font-semibold text-foreground truncate leading-tight">{commitMessage}</p>
+            )}
+            <div className="flex items-center gap-2 mt-0.5">
+              {commitHash && (
+                <code className="font-mono text-[10px] bg-muted/60 px-1.5 py-0.5 rounded text-muted-foreground">
+                  {commitHash}
+                </code>
+              )}
+              <span className="text-[10px] text-muted-foreground">
+                {files.length} file{files.length !== 1 ? "s" : ""} changed
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-muted/60 transition-colors flex-shrink-0"
+            title="Close"
+          >
+            <X className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+          </button>
+        </div>
+
+        {/* Scrollable diff content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {files.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <FileCode className="h-10 w-10 mb-3 opacity-30" />
+              <p className="text-sm">No diff data available for this commit</p>
+            </div>
+          ) : (
+            files.map((f, i) => <FileDiff key={i} fileDiff={f} />)
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
 // ── Git expanded panels ───────────────────────────────────────────────────────
 
 function CommitDetail({ parsed }) {
+  const [showDiff, setShowDiff] = useState(false);
+
   const {
     commitMessage, commitHash, author, diffStat,
     filesChanged = [], fileStatuses = [],
@@ -339,8 +386,27 @@ function CommitDetail({ parsed }) {
         </div>
       )}
 
-      {/* Line-level diff viewer */}
-      {diffPatch && <DiffViewer patch={diffPatch} />}
+      {/* View diff button */}
+      {diffPatch && (
+        <button
+          onClick={() => setShowDiff(true)}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-orange-500/30 bg-orange-500/5 text-xs text-orange-300/80 hover:text-orange-200 hover:bg-orange-500/10 hover:border-orange-400/50 transition-colors"
+        >
+          <FileCode className="h-3.5 w-3.5" />
+          View Line Diff
+          <ChevronRight className="h-3 w-3" />
+        </button>
+      )}
+
+      {/* Right-side diff panel */}
+      {showDiff && diffPatch && (
+        <DiffSidePanel
+          patch={diffPatch}
+          commitMessage={commitMessage}
+          commitHash={commitHash}
+          onClose={() => setShowDiff(false)}
+        />
+      )}
     </div>
   );
 }
