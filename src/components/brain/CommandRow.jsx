@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, GitBranch, Package, Wrench, Terminal, Bot, Globe, Box, Code, Network } from "lucide-react";
+import { ChevronDown, ChevronRight, GitBranch, Package, Wrench, Terminal, Bot, Globe, Box, Code, Network, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -24,6 +24,7 @@ function parsePageText(pageText) {
 
 export default function CommandRow({ event }) {
   const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
   const meta = TYPE_META[event.event_type] || TYPE_META["terminal_command"];
   const Icon = meta.icon;
   const parsed = parsePageText(event.page_text);
@@ -32,6 +33,14 @@ export default function CommandRow({ event }) {
   const dir = parsed?.workingDirectory || event.url || "";
 
   const ts = event.created_at ? format(new Date(event.created_at), "HH:mm:ss") : "";
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    if (command === "—") return;
+    navigator.clipboard.writeText(command);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className={cn("border-b border-border/40 last:border-0", expanded && "bg-muted/30")}>
@@ -45,6 +54,15 @@ export default function CommandRow({ event }) {
           {meta.label}
         </span>
         <span className="flex-1 text-sm font-mono text-foreground truncate">{command}</span>
+        <button
+          onClick={handleCopy}
+          title="Copy command"
+          className="flex-shrink-0 p-1 rounded hover:bg-muted/60 transition-colors"
+        >
+          {copied
+            ? <Check className="h-3 w-3 text-emerald-400" />
+            : <Copy className="h-3 w-3 text-muted-foreground hover:text-foreground" />}
+        </button>
         <span className="text-xs text-muted-foreground flex-shrink-0 hidden md:block">{project}</span>
         <span className="text-xs text-muted-foreground flex-shrink-0 tabular-nums ml-3">{ts}</span>
       </button>
