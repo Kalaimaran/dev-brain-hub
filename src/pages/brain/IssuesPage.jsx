@@ -141,7 +141,7 @@ export default function IssuesPage() {
                     .then((r) => r.data?.data ?? r.data),
   });
 
-  const issues = data?.items || data || [];
+  const issues = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
   const total    = issues.length;
   const open     = issues.filter((i) => i.status === "open").length;
   const resolved = issues.filter((i) => i.status === "resolved").length;

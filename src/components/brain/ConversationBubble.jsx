@@ -21,14 +21,14 @@ export default function ConversationBubble({ promptText, responseText }) {
           <div key={i} className="space-y-3">
             {pair.request && (
               <div className="flex justify-end">
-                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-violet-500/20 border border-violet-500/30 px-4 py-2.5 text-sm text-foreground whitespace-pre-wrap">
+                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-violet-500/20 border border-violet-500/30 px-4 py-2.5 text-sm text-foreground whitespace-pre-wrap break-words overflow-hidden">
                   {pair.request}
                 </div>
               </div>
             )}
             {pair.response && (
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-muted border border-border/60 px-4 py-2.5 text-sm text-foreground whitespace-pre-wrap">
+                <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-muted border border-border/60 px-4 py-2.5 text-sm text-foreground whitespace-pre-wrap break-words overflow-hidden">
                   {pair.response}
                 </div>
               </div>
@@ -44,14 +44,14 @@ export default function ConversationBubble({ promptText, responseText }) {
     <div className="space-y-3">
       {promptText && (
         <div className="flex justify-end">
-          <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-violet-500/20 border border-violet-500/30 px-4 py-2.5 text-sm text-foreground whitespace-pre-wrap">
+          <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-violet-500/20 border border-violet-500/30 px-4 py-2.5 text-sm text-foreground whitespace-pre-wrap break-words overflow-hidden">
             {promptText}
           </div>
         </div>
       )}
       {responseText && (
         <div className="flex justify-start">
-          <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-muted border border-border/60 px-4 py-2.5 text-sm text-foreground whitespace-pre-wrap">
+          <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-muted border border-border/60 px-4 py-2.5 text-sm text-foreground whitespace-pre-wrap break-words overflow-hidden">
             {responseText}
           </div>
         </div>

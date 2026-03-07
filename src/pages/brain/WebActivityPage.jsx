@@ -129,10 +129,10 @@ export default function WebActivityPage() {
                     <tr><td colSpan={4} className="px-5 py-8 text-center text-xs text-muted-foreground">No data</td></tr>
                   ) : topSites.map((s, i) => (
                     <tr key={i} className="border-b border-border/40 last:border-0 hover:bg-muted/10 transition-colors">
-                      <td className="px-5 py-2.5 text-foreground font-medium">{s.domain}</td>
-                      <td className="px-5 py-2.5 text-right tabular-nums text-muted-foreground">{s.visits}</td>
-                      <td className="px-5 py-2.5 text-right tabular-nums text-muted-foreground">{msToReadable(s.totalTimeMs)}</td>
-                      <td className="px-5 py-2.5 text-right tabular-nums text-muted-foreground">{msToReadable(s.avgTimeMs)}</td>
+                      <td className="px-5 py-2.5 text-foreground font-medium">{s.domain ?? s.host ?? "—"}</td>
+                      <td className="px-5 py-2.5 text-right tabular-nums text-muted-foreground">{s.visits ?? s.visit_count ?? s.count ?? 0}</td>
+                      <td className="px-5 py-2.5 text-right tabular-nums text-muted-foreground">{msToReadable(s.totalTimeMs ?? s.total_time_ms ?? s.totalTime)}</td>
+                      <td className="px-5 py-2.5 text-right tabular-nums text-muted-foreground">{msToReadable(s.avgTimeMs ?? s.avg_time_ms ?? s.avgTime)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -222,7 +222,7 @@ export default function WebActivityPage() {
                       {tab === "searches" ? (ev.search_query || "—") : (ev.page_title || "—")}
                     </td>
                     {tab === "visits" && (
-                      <td className="px-4 py-2.5 text-right text-xs text-muted-foreground tabular-nums">{msToReadable(ev.time_spent_ms)}</td>
+                      <td className="px-4 py-2.5 text-right text-xs text-muted-foreground tabular-nums">{msToReadable(ev.time_spent_ms ?? ev.timeSpentMs ?? ev.duration_ms ?? ev.duration)}</td>
                     )}
                     <td className="px-4 py-2.5">
                       {ev.url && (

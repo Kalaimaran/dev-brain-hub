@@ -25,10 +25,10 @@ export default function NotesPage() {
                     .then((r) => r.data?.data ?? r.data),
   });
 
-  const notes = (data?.items || data || []).sort((a, b) =>
+  const notes = (Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : []).sort((a, b) =>
     sortAsc
-      ? a.title.localeCompare(b.title)
-      : new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at)
+      ? (a.title || "").localeCompare(b.title || "")
+      : new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0)
   );
 
   // Collect all tags

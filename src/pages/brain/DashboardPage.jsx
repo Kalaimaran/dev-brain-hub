@@ -39,8 +39,23 @@ export default function DashboardPage() {
     queryFn:  () => brainApi.rangeSummary(range).then((r) => r.data?.data ?? r.data),
   });
 
-  // Merged activity feed — combine terminal + ai + web from summary
-  const feedEvents = summary?.recentEvents || [];
+  // Activity feed — fetch separately; dailySummary doesn't return individual events
+  const { data: feedWebData, isLoading: loadingFeedWeb } = useQuery({
+    queryKey: ["brain-feed-web", selectedDate],
+    queryFn: () => brainApi.webActivity({ dateFrom: selectedDate, limit: 100 }).then((r) => r.data?.data ?? r.data),
+  });
+  const { data: feedTermData, isLoading: loadingFeedTerm } = useQuery({
+    queryKey: ["brain-feed-term", selectedDate],
+    queryFn: () => brainApi.terminal({ dateFrom: selectedDate, limit: 100 }).then((r) => r.data?.data ?? r.data),
+  });
+  const feedWebItems = (Array.isArray(feedWebData?.items) ? feedWebData.items : Array.isArray(feedWebData) ? feedWebData : [])
+    .filter((ev) => ev.created_at?.startsWith(selectedDate))
+    .map((ev) => ({ ...ev, event_type: ev.type === "search" ? "website_search" : "website_visit" }));
+  const feedTermItems = (Array.isArray(feedTermData?.items) ? feedTermData.items : Array.isArray(feedTermData) ? feedTermData : [])
+    .filter((ev) => ev.created_at?.startsWith(selectedDate));
+  const feedEvents = [...feedWebItems, ...feedTermItems]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const loadingFeed = loadingFeedWeb || loadingFeedTerm;
 
   // Build range chart data
   const rangeChartData = Array.isArray(rangeData)
@@ -52,20 +67,27 @@ export default function DashboardPage() {
       }))
     : [];
 
-  // Command breakdown donut
-  const cmdBreakdown = summary?.commandBreakdown
-    ? Object.entries(summary.commandBreakdown).map(([name, value]) => ({ name, value }))
-    : [];
+  // Command breakdown donut — API returns array [{event_type, count}] or object {type: count}
+  const rawCmdBreakdown = summary?.commandBreakdown ?? summary?.command_breakdown ?? summary?.commandTypes ?? null;
+  const cmdBreakdown = Array.isArray(rawCmdBreakdown)
+    ? rawCmdBreakdown.map((item) => ({ name: item.event_type ?? item.name ?? item.type ?? "Other", value: item.count ?? item.value ?? 0 }))
+    : rawCmdBreakdown
+      ? Object.entries(rawCmdBreakdown).map(([name, value]) => ({ name, value }))
+      : [];
 
-  // AI services donut
-  const aiBreakdown = summary?.aiBreakdown
-    ? Object.entries(summary.aiBreakdown).map(([name, value]) => ({ name, value }))
-    : [];
+  // AI services donut — API returns aiServiceBreakdown [{ai_service, count}] or object
+  const rawAiBreakdown = summary?.aiServiceBreakdown ?? summary?.aiBreakdown ?? summary?.ai_breakdown ?? summary?.aiServices ?? null;
+  const aiBreakdown = Array.isArray(rawAiBreakdown)
+    ? rawAiBreakdown.map((item) => ({ name: item.ai_service ?? item.name ?? item.service ?? "Other", value: item.count ?? item.value ?? 0 }))
+    : rawAiBreakdown
+      ? Object.entries(rawAiBreakdown).map(([name, value]) => ({ name, value }))
+      : [];
 
-  // Top domains bar
-  const topDomains = (summary?.topDomains || []).slice(0, 6).map((d) => ({
-    domain: d.domain?.replace("www.", "") || "—",
-    visits: d.count ?? d.visits ?? 0,
+  // Top domains bar — handle multiple possible field names from API
+  const rawTopDomains = summary?.topDomains ?? summary?.top_domains ?? summary?.domains ?? summary?.topSites ?? [];
+  const topDomains = rawTopDomains.slice(0, 6).map((d) => ({
+    domain: (d.domain ?? d.host ?? d.site ?? "—").replace("www.", ""),
+    visits: d.count ?? d.visits ?? d.visit_count ?? 0,
   }));
 
   return (
@@ -98,12 +120,12 @@ export default function DashboardPage() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <StatCard title="Sites Visited"  value={summary?.visits   ?? "—"} icon={Globe}    iconColor="text-blue-400"   iconBg="bg-blue-500/10"   loading={loadingSummary} />
-        <StatCard title="Web Searches"   value={summary?.searches ?? "—"} icon={Search}   iconColor="text-teal-400"   iconBg="bg-teal-500/10"   loading={loadingSummary} />
-        <StatCard title="Commands Run"   value={summary?.commands ?? "—"} icon={Terminal}  iconColor="text-zinc-400"   iconBg="bg-zinc-500/10"   loading={loadingSummary} />
-        <StatCard title="AI Prompts"     value={summary?.aiPrompts ?? "—"} icon={Bot}      iconColor="text-violet-400" iconBg="bg-violet-500/10" loading={loadingSummary} />
-        <StatCard title="Pages Saved"    value={summary?.transcripts ?? "—"} icon={FileText} iconColor="text-amber-400" iconBg="bg-amber-500/10"  loading={loadingSummary} />
-        <StatCard title="Active Window"  value={summary?.activeFrom ? `${summary.activeFrom}–${summary.activeTo}` : "—"} icon={Clock} iconColor="text-emerald-400" iconBg="bg-emerald-500/10" loading={loadingSummary} />
+        <StatCard title="Sites Visited"  value={summary?.visits ?? summary?.totalVisits ?? summary?.web_visits ?? summary?.siteVisits ?? 0} icon={Globe}    iconColor="text-blue-400"   iconBg="bg-blue-500/10"   loading={loadingSummary} />
+        <StatCard title="Web Searches"   value={summary?.searches ?? summary?.totalSearches ?? summary?.web_searches ?? summary?.searchCount ?? 0} icon={Search}   iconColor="text-teal-400"   iconBg="bg-teal-500/10"   loading={loadingSummary} />
+        <StatCard title="Commands Run"   value={summary?.commands ?? summary?.totalCommands ?? summary?.terminal_commands ?? summary?.commandCount ?? 0} icon={Terminal}  iconColor="text-zinc-400"   iconBg="bg-zinc-500/10"   loading={loadingSummary} />
+        <StatCard title="AI Prompts"     value={summary?.aiPrompts ?? summary?.ai_prompts ?? summary?.totalAiPrompts ?? summary?.aiCount ?? 0} icon={Bot}      iconColor="text-violet-400" iconBg="bg-violet-500/10" loading={loadingSummary} />
+        <StatCard title="Pages Saved"    value={summary?.transcripts ?? summary?.totalTranscripts ?? summary?.pages ?? summary?.pagesSaved ?? 0} icon={FileText} iconColor="text-amber-400" iconBg="bg-amber-500/10"  loading={loadingSummary} />
+        <StatCard title="Active Window"  value={(() => { const f = summary?.activeFrom ?? summary?.firstEvent; const t = summary?.activeTo ?? summary?.lastEvent; if (!f) return "—"; try { return `${format(new Date(f), "HH:mm")}–${format(new Date(t ?? f), "HH:mm")}`; } catch { return "—"; } })()} icon={Clock} iconColor="text-emerald-400" iconBg="bg-emerald-500/10" loading={loadingSummary} />
       </div>
 
       {/* Range selector + chart */}
@@ -199,7 +221,7 @@ export default function DashboardPage() {
       {/* Activity Feed */}
       <div className="rounded-xl border border-border/60 bg-card p-5">
         <SectionTitle>Chronological Activity Feed</SectionTitle>
-        <ActivityFeed events={feedEvents} loading={loadingSummary} />
+        <ActivityFeed events={feedEvents} loading={loadingFeed} />
       </div>
     </div>
   );

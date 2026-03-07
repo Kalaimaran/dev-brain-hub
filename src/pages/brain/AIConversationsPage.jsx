@@ -147,20 +147,25 @@ export default function AIConversationsPage() {
             <div className="flex flex-col h-full max-h-[70vh]">
               {/* Detail header */}
               <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={cn("inline-flex items-center rounded border px-2 py-0.5 text-xs font-semibold", serviceColor(selected.ai_service))}>
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className={cn("inline-flex items-center rounded border px-2 py-0.5 text-xs font-semibold flex-shrink-0", serviceColor(selected.ai_service))}>
                     {selected.ai_service || "AI"}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  {selected.page_title && (
+                    <span className="text-xs text-foreground font-medium truncate" title={selected.page_title}>
+                      {selected.page_title}
+                    </span>
+                  )}
+                  <span className="text-xs text-muted-foreground flex-shrink-0 ml-auto">
                     {selected.created_at ? format(new Date(selected.created_at), "MMM d, yyyy HH:mm") : ""}
                   </span>
                   {selected.url && (
-                    <a href={selected.url} target="_blank" rel="noreferrer" className="ml-auto flex-shrink-0">
+                    <a href={selected.url} target="_blank" rel="noreferrer" className="flex-shrink-0">
                       <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
                     </a>
                   )}
                 </div>
-                <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-muted/40 transition-colors ml-2">
+                <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-muted/40 transition-colors ml-2 flex-shrink-0">
                   <X className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
 import { Search, Terminal, Bot, Globe, FileText, NotebookPen, Bug, Loader2, ExternalLink } from "lucide-react";
@@ -68,6 +68,9 @@ export default function GlobalSearchPage() {
     setSubmit(query.trim());
     setPage(0);
   };
+
+  // Reset page to 0 when filters change
+  useEffect(() => { setPage(0); }, [types, dateFrom]);
 
   const toggleType = (t) =>
     setTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
@@ -206,8 +209,36 @@ export default function GlobalSearchPage() {
   );
 }
 
+function parseTerminalJson(raw) {
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+function getItemTitle(item) {
+  if (item.source === "terminal") {
+    if (item.command) return item.command;
+    const p = parseTerminalJson(item.body ?? item.preview ?? item.snippet);
+    if (p?.command) return p.command;
+  }
+  return item.title ?? item.subject ?? item.command ?? item.domain ?? "—";
+}
+
+function getItemPreview(item) {
+  const raw = item.preview ?? item.snippet ?? item.body;
+  if (item.source === "terminal" && raw) {
+    const p = parseTerminalJson(raw);
+    if (p) {
+      const parts = [p.projectName ?? p.repoName, p.workingDirectory].filter(Boolean);
+      return parts.length > 0 ? parts.join(" • ") : null;
+    }
+  }
+  return raw;
+}
+
 function ResultCard({ item, query, meta, navigate }) {
   const Icon = meta.icon;
+  const title   = getItemTitle(item);
+  const preview = getItemPreview(item);
   return (
     <button
       onClick={() => navigate(meta.route)}
@@ -227,9 +258,9 @@ function ResultCard({ item, query, meta, navigate }) {
           {item.created_at ? format(new Date(item.created_at), "MMM d, yyyy") : ""}
         </span>
       </div>
-      <p className="text-sm text-foreground font-medium">{highlight(item.title || "—", query)}</p>
-      {item.preview && (
-        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{highlight(item.preview, query)}</p>
+      <p className="text-sm text-foreground font-medium">{highlight(title, query)}</p>
+      {preview && (
+        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{highlight(preview, query)}</p>
       )}
     </button>
   );
