@@ -5,23 +5,24 @@ import { cn } from "@/lib/utils";
 export default function TagInput({ tags = [], onChange, placeholder = "Add tagâ€¦", className }) {
   const [input, setInput] = useState("");
   const inputRef = useRef(null);
+  const safeTags = Array.isArray(tags) ? tags : [];
 
   const addTag = (val) => {
     const trimmed = val.trim().toLowerCase();
-    if (trimmed && !tags.includes(trimmed)) {
-      onChange([...tags, trimmed]);
+    if (trimmed && !safeTags.includes(trimmed)) {
+      onChange([...safeTags, trimmed]);
     }
     setInput("");
   };
 
-  const removeTag = (tag) => onChange(tags.filter((t) => t !== tag));
+  const removeTag = (tag) => onChange(safeTags.filter((t) => t !== tag));
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       addTag(input);
-    } else if (e.key === "Backspace" && !input && tags.length > 0) {
-      removeTag(tags[tags.length - 1]);
+    } else if (e.key === "Backspace" && !input && safeTags.length > 0) {
+      removeTag(safeTags[safeTags.length - 1]);
     }
   };
 
@@ -30,7 +31,7 @@ export default function TagInput({ tags = [], onChange, placeholder = "Add tagâ€
       className={cn("flex flex-wrap gap-1.5 min-h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 cursor-text", className)}
       onClick={() => inputRef.current?.focus()}
     >
-      {tags.map((tag) => (
+      {safeTags.map((tag) => (
         <span key={tag} className="inline-flex items-center gap-1 rounded-md bg-violet-500/15 border border-violet-500/25 text-violet-300 px-2 py-0.5 text-xs font-medium">
           {tag}
           <button type="button" onClick={(e) => { e.stopPropagation(); removeTag(tag); }} className="hover:text-red-400 transition-colors">
@@ -44,7 +45,7 @@ export default function TagInput({ tags = [], onChange, placeholder = "Add tagâ€
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={() => input && addTag(input)}
-        placeholder={tags.length === 0 ? placeholder : ""}
+        placeholder={safeTags.length === 0 ? placeholder : ""}
         className="flex-1 min-w-[120px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
       />
     </div>
