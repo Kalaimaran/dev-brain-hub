@@ -6,7 +6,8 @@ import {
   Terminal, Bot, Globe, Save, AlertCircle, Loader2, Key,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { authApi, brainApi, getAccessToken } from "@/lib/api";
+import { authApi, brainApi, getAccessToken, getApiBaseUrl, isDeveloperMode, setDeveloperMode } from "@/lib/api";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -324,6 +325,29 @@ function ConnectionSection() {
   );
 }
 
+function DeveloperModeSection() {
+  const [enabled, setEnabled] = useState(isDeveloperMode());
+
+  const handleToggle = (next) => {
+    setEnabled(next);
+    setDeveloperMode(next);
+  };
+
+  return (
+    <SectionCard title="Developer Mode">
+      <div className="flex items-center justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground">Enable local backend</p>
+          <p className="text-xs text-muted-foreground">
+            {enabled ? "Using local API: http://localhost:8080" : `Using production API: ${getApiBaseUrl()}`}
+          </p>
+        </div>
+        <Switch checked={enabled} onCheckedChange={handleToggle} aria-label="Toggle developer mode" />
+      </div>
+    </SectionCard>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { user, login } = useAuth();
@@ -369,6 +393,7 @@ export default function ProfilePage() {
       <PasswordSection  />
       <TokenSection     />
       <ConnectionSection />
+      <DeveloperModeSection />
     </div>
   );
 }

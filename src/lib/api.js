@@ -1,18 +1,23 @@
 import axios from "axios";
 
-const API_BASE = "https://data-nexus-541643753386.asia-south1.run.app";
+const PROD_API_BASE = "https://data-nexus-541643753386.asia-south1.run.app";
+const DEV_API_BASE = "http://localhost:8080";
 
 // ─── Storage keys ────────────────────────────────────────────────────────────
 const ACCESS_KEY = "dn_access_token";
 const REFRESH_KEY = "dn_refresh_token";
+const DEV_MODE_KEY = "dn_developer_mode";
 
 // ─── In-memory mirrors ────────────────────────────────────────────────────────
 let _access = localStorage.getItem(ACCESS_KEY);
 let _refresh = localStorage.getItem(REFRESH_KEY);
+let _developerMode = localStorage.getItem(DEV_MODE_KEY) === "true";
 
 // ─── Public helpers ───────────────────────────────────────────────────────────
 export const getAccessToken = () => _access;
 export const getRefreshToken = () => _refresh;
+export const isDeveloperMode = () => _developerMode;
+export const getApiBaseUrl = () => (_developerMode ? DEV_API_BASE : PROD_API_BASE);
 
 export const setTokens = (access, refresh) => {
   _access = access;
@@ -28,9 +33,15 @@ export const clearTokens = () => {
   localStorage.removeItem(REFRESH_KEY);
 };
 
+export const setDeveloperMode = (enabled) => {
+  _developerMode = !!enabled;
+  localStorage.setItem(DEV_MODE_KEY, String(_developerMode));
+  api.defaults.baseURL = getApiBaseUrl();
+};
+
 // ─── Axios instance ───────────────────────────────────────────────────────────
 const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: getApiBaseUrl(),
   headers: { "Content-Type": "application/json" },
 });
 
@@ -48,7 +59,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry && _refresh) {
       original._retry = true;
       try {
-        const res = await axios.post(`${API_BASE}/api/v1/auth/refresh`, {
+        const res = await axios.post(`${getApiBaseUrl()}/api/v1/auth/refresh`, {
           refreshToken: _refresh,
         });
         const payload = res.data?.data ?? res.data;
