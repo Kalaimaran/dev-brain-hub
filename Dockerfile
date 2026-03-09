@@ -23,7 +23,7 @@ COPY nginx.conf /etc/nginx/conf.d/app.conf
 # Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Cloud Run injects $PORT (default 8080); nginx listens on it via envsubst
+# Cloud Run injects $POnRT (default 8080); nginx listens on it via envsubst
 EXPOSE 8081
 
 # Use envsubst to inject $PORT at container start, then run nginx
