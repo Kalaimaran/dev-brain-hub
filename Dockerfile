@@ -24,7 +24,7 @@ COPY nginx.conf /etc/nginx/conf.d/app.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Cloud Run injects $POnRT (default 8080); nginx listens on it via envsubst
-EXPOSE 8081
+EXPOSE 8080
 
 # Use envsubst to inject $PORT at container start, then run nginx
 CMD ["/bin/sh", "-c", "envsubst '$PORT' < /etc/nginx/conf.d/app.conf > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
