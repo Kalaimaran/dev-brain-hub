@@ -87,8 +87,17 @@ export default function TranscriptsPage() {
                     </span>
                   </div>
                 </div>
-                <p className="text-sm font-medium text-foreground line-clamp-1">{t.page_title || "Untitled"}</p>
-                <p className="text-xs text-muted-foreground line-clamp-2">{t.page_text_preview || "—"}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-medium text-foreground line-clamp-1 flex-1">{t.page_title || "Untitled"}</p>
+                  {t.summary && (
+                    <span className="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/20 rounded px-1.5 py-0.5 font-medium flex-shrink-0">
+                      AI Summary
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {t.summary || t.page_text_preview || "—"}
+                </p>
               </button>
             ))
           )}
@@ -110,7 +119,7 @@ export default function TranscriptsPage() {
               <p className="text-sm">Select a transcript to read</p>
             </div>
           ) : (
-            <div className="flex flex-col max-h-[80vh]">
+            <div className="flex flex-col h-[80vh]">
               <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground truncate">{selected.page_title || "Untitled"}</p>
@@ -133,17 +142,25 @@ export default function TranscriptsPage() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-5 py-4">
+              <div className="border-b border-border/40 px-5 py-3 flex-[2] flex flex-col gap-2 min-h-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Summary</p>
+                  <button className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 transition-colors">
+                    <NotebookPen className="h-3.5 w-3.5" />
+                    Create note from this transcript
+                  </button>
+                </div>
+                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3 flex-1 overflow-y-auto min-h-0">
+                  <p className="text-xs text-foreground leading-relaxed">
+                    {selected.summary || "No summary available"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex-[1] overflow-y-auto px-5 py-4 min-h-0">
                 <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap font-sans">
                   {selected.page_text_preview || selected.page_text || "No content available"}
                 </p>
-              </div>
-
-              <div className="border-t border-border/40 px-5 py-3">
-                <button className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 transition-colors">
-                  <NotebookPen className="h-3.5 w-3.5" />
-                  Create note from this transcript
-                </button>
               </div>
             </div>
           )}

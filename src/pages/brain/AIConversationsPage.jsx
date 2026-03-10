@@ -111,11 +111,18 @@ export default function AIConversationsPage() {
                     <span className={cn("inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-semibold", serviceColor(conv.ai_service))}>
                       {conv.ai_service || "AI"}
                     </span>
+                    {conv.response_text && (
+                      <span className="text-[9px] bg-violet-500/15 text-violet-300 border border-violet-500/25 rounded px-1.5 py-0.5 font-medium">
+                        AI Summary
+                      </span>
+                    )}
                     <span className="text-[10px] text-muted-foreground tabular-nums ml-auto">
                       {conv.created_at ? format(new Date(conv.created_at), "MMM d, HH:mm") : ""}
                     </span>
                   </div>
-                  <p className="text-xs text-foreground line-clamp-2">{getConvTitle(conv.prompt_text)?.substring(0, 120) || "—"}</p>
+                  <p className="text-xs text-foreground line-clamp-2">
+                    {conv.page_title || getConvTitle(conv.prompt_text)?.substring(0, 140) || "—"}
+                  </p>
                 </div>
               </button>
             ))
@@ -144,7 +151,7 @@ export default function AIConversationsPage() {
               <p className="text-sm">Select a conversation to view</p>
             </div>
           ) : (
-            <div className="flex flex-col h-full max-h-[70vh]">
+            <div className="flex flex-col h-[70vh]">
               {/* Detail header */}
               <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -170,15 +177,23 @@ export default function AIConversationsPage() {
                 </button>
               </div>
               {/* Chat */}
-              <div className="flex-1 overflow-y-auto p-5">
-                <ConversationBubble promptText={selected.prompt_text} responseText={selected.response_text} />
+              <div className="flex-[2] overflow-y-auto p-5 min-h-0">
+                <ConversationBubble promptText={selected.prompt_text} responseText={null} />
               </div>
-              {/* Footer action */}
-              <div className="border-t border-border/40 px-5 py-3">
-                <button className="flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
-                  <NotebookPen className="h-3.5 w-3.5" />
-                  Add note about this conversation
-                </button>
+              {/* Summary */}
+              <div className="border-t border-border/40 px-5 py-3 flex-[1] flex flex-col gap-2 min-h-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider">TL;DR</p>
+                  <button className="flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                    <NotebookPen className="h-3.5 w-3.5" />
+                    Add note about this conversation
+                  </button>
+                </div>
+                <div className="rounded-lg bg-violet-500/10 border border-violet-500/20 px-4 py-3 flex-1 overflow-y-auto min-h-0">
+                  <p className="text-xs text-foreground leading-relaxed">
+                    {selected.response_text || "No summary available"}
+                  </p>
+                </div>
               </div>
             </div>
           )}
