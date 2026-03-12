@@ -98,7 +98,7 @@ export default function TerminalPage() {
   }, [items, groupByDay]);
 
   return (
-    <div className="space-y-5 max-w-6xl mx-auto">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -114,7 +114,7 @@ export default function BrainLayout() {
 
       {/* ── Main content (only this scrolls) ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6 flex flex-col">
           <Outlet />
         </main>
       </div>

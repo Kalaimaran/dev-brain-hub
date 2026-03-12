@@ -9,6 +9,13 @@ import { cn } from "@/lib/utils";
 const AI_SERVICES = ["ChatGPT","Claude","Gemini","Ollama","Aider","Other"];
 const PAGE_SIZE = 20;
 
+function safeFormat(val, fmt) {
+  if (!val) return "";
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "";
+  return format(d, fmt);
+}
+
 function getConvTitle(promptText) {
   if (!promptText) return "—";
   try {
@@ -49,7 +56,7 @@ export default function AIConversationsPage() {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto">
+    <div className="flex-1 flex flex-col min-h-0 space-y-4">
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -83,53 +90,58 @@ export default function AIConversationsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      <div className="flex gap-3 flex-1 min-h-0">
         {/* Left list */}
-        <div className="lg:col-span-2 rounded-xl border border-border/60 bg-card overflow-hidden">
-          {isLoading ? (
-            <div className="space-y-0">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-16 border-b border-border/40 bg-muted/10 animate-pulse" />
-              ))}
-            </div>
-          ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Bot className="h-10 w-10 mb-3 opacity-30" />
-              <p className="text-sm">No conversations found</p>
-            </div>
-          ) : (
-            items.map((conv, i) => (
-              <button
-                key={conv.id ?? i}
-                onClick={() => setSelected(conv)}
-                className={cn("w-full flex items-start gap-3 px-4 py-3 text-left border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors",
-                  selected?.id === conv.id && "bg-violet-500/10 border-l-2 border-l-violet-500")}
-              >
-                <Bot className="h-4 w-4 text-violet-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className={cn("inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-semibold", serviceColor(conv.ai_service))}>
-                      {conv.ai_service || "AI"}
-                    </span>
-                    {conv.response_text && (
-                      <span className="text-[9px] bg-violet-500/15 text-violet-300 border border-violet-500/25 rounded px-1.5 py-0.5 font-medium">
-                        AI Summary
+        <div className={cn(
+          "rounded-xl border border-border/60 bg-card overflow-hidden flex flex-col transition-all duration-200",
+          selected ? "w-[38%] flex-shrink-0" : "w-full"
+        )}>
+          <div className="flex-1 overflow-y-auto">
+            {isLoading ? (
+              <div className="space-y-0">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="h-16 border-b border-border/40 bg-muted/10 animate-pulse" />
+                ))}
+              </div>
+            ) : items.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                <Bot className="h-10 w-10 mb-3 opacity-30" />
+                <p className="text-sm">No conversations found</p>
+              </div>
+            ) : (
+              items.map((conv, i) => (
+                <button
+                  key={conv.id ?? i}
+                  onClick={() => setSelected(conv)}
+                  className={cn("w-full flex items-start gap-3 px-4 py-3 text-left border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors",
+                    selected?.id === conv.id && "bg-violet-500/10 border-l-2 border-l-violet-500")}
+                >
+                  <Bot className="h-4 w-4 text-violet-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className={cn("inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-semibold", serviceColor(conv.ai_service))}>
+                        {conv.ai_service || "AI"}
                       </span>
-                    )}
-                    <span className="text-[10px] text-muted-foreground tabular-nums ml-auto">
-                      {conv.created_at ? format(new Date(conv.created_at), "MMM d, HH:mm") : ""}
-                    </span>
+                      {conv.response_text && (
+                        <span className="text-[9px] bg-violet-500/15 text-violet-300 border border-violet-500/25 rounded px-1.5 py-0.5 font-medium">
+                          AI Summary
+                        </span>
+                      )}
+                      <span className="text-[10px] text-muted-foreground tabular-nums ml-auto">
+                        {safeFormat(conv.created_at, "MMM d, HH:mm")}
+                      </span>
+                    </div>
+                    <p className="text-xs text-foreground line-clamp-2">
+                      {conv.page_title || getConvTitle(conv.prompt_text)?.substring(0, 140) || "—"}
+                    </p>
                   </div>
-                  <p className="text-xs text-foreground line-clamp-2">
-                    {conv.page_title || getConvTitle(conv.prompt_text)?.substring(0, 140) || "—"}
-                  </p>
-                </div>
-              </button>
-            ))
-          )}
+                </button>
+              ))
+            )}
+          </div>
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2 px-4 py-3 border-t border-border/40">
+            <div className="flex justify-center gap-2 px-4 py-3 border-t border-border/40 flex-shrink-0">
               <button disabled={page === 0} onClick={() => setPage(page - 1)}
                 className="px-3 py-1 rounded-lg border border-border/60 text-xs disabled:opacity-40 hover:bg-muted/20 transition-colors">
                 Prev
@@ -143,61 +155,54 @@ export default function AIConversationsPage() {
           )}
         </div>
 
-        {/* Right detail */}
-        <div className="lg:col-span-3 rounded-xl border border-border/60 bg-card overflow-hidden">
-          {!selected ? (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-muted-foreground">
-              <Bot className="h-12 w-12 mb-3 opacity-20" />
-              <p className="text-sm">Select a conversation to view</p>
+        {/* Right detail — only visible when a conversation is selected */}
+        {selected && (
+          <div className="flex-1 rounded-xl border border-border/60 bg-card overflow-hidden flex flex-col">
+            {/* Detail header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border/40 flex-shrink-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className={cn("inline-flex items-center rounded border px-2 py-0.5 text-xs font-semibold flex-shrink-0", serviceColor(selected.ai_service))}>
+                  {selected.ai_service || "AI"}
+                </span>
+                {selected.page_title && (
+                  <span className="text-xs text-foreground font-medium truncate" title={selected.page_title}>
+                    {selected.page_title}
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground flex-shrink-0 ml-auto">
+                  {safeFormat(selected.created_at, "MMM d, yyyy HH:mm")}
+                </span>
+                {selected.url && (
+                  <a href={selected.url} target="_blank" rel="noreferrer" className="flex-shrink-0">
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                  </a>
+                )}
+              </div>
+              <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-muted/40 transition-colors ml-2 flex-shrink-0">
+                <X className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
             </div>
-          ) : (
-            <div className="flex flex-col h-[70vh]">
-              {/* Detail header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className={cn("inline-flex items-center rounded border px-2 py-0.5 text-xs font-semibold flex-shrink-0", serviceColor(selected.ai_service))}>
-                    {selected.ai_service || "AI"}
-                  </span>
-                  {selected.page_title && (
-                    <span className="text-xs text-foreground font-medium truncate" title={selected.page_title}>
-                      {selected.page_title}
-                    </span>
-                  )}
-                  <span className="text-xs text-muted-foreground flex-shrink-0 ml-auto">
-                    {selected.created_at ? format(new Date(selected.created_at), "MMM d, yyyy HH:mm") : ""}
-                  </span>
-                  {selected.url && (
-                    <a href={selected.url} target="_blank" rel="noreferrer" className="flex-shrink-0">
-                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
-                    </a>
-                  )}
-                </div>
-                <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-muted/40 transition-colors ml-2 flex-shrink-0">
-                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+            {/* Chat bubbles */}
+            <div className="flex-[2] overflow-y-auto p-5 min-h-0">
+              <ConversationBubble promptText={selected.prompt_text} responseText={null} />
+            </div>
+            {/* TL;DR summary */}
+            <div className="border-t border-border/40 px-5 py-3 flex-[1] flex flex-col gap-2 min-h-0">
+              <div className="flex items-center justify-between flex-shrink-0">
+                <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider">TL;DR</p>
+                <button className="flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                  <NotebookPen className="h-3.5 w-3.5" />
+                  Add note about this conversation
                 </button>
               </div>
-              {/* Chat */}
-              <div className="flex-[2] overflow-y-auto p-5 min-h-0">
-                <ConversationBubble promptText={selected.prompt_text} responseText={null} />
-              </div>
-              {/* Summary */}
-              <div className="border-t border-border/40 px-5 py-3 flex-[1] flex flex-col gap-2 min-h-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider">TL;DR</p>
-                  <button className="flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors">
-                    <NotebookPen className="h-3.5 w-3.5" />
-                    Add note about this conversation
-                  </button>
-                </div>
-                <div className="rounded-lg bg-violet-500/10 border border-violet-500/20 px-4 py-3 flex-1 overflow-y-auto min-h-0">
-                  <p className="text-xs text-foreground leading-relaxed">
-                    {selected.response_text || "No summary available"}
-                  </p>
-                </div>
+              <div className="rounded-lg bg-violet-500/10 border border-violet-500/20 px-4 py-3 flex-1 overflow-y-auto min-h-0">
+                <p className="text-xs text-foreground leading-relaxed">
+                  {selected.response_text || "No summary available"}
+                </p>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

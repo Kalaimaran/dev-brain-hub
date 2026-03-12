@@ -7,6 +7,13 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 
+function safeFormat(val, fmt) {
+  if (!val) return "";
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "";
+  return format(d, fmt);
+}
+
 export default function TranscriptsPage() {
   const [query,    setQuery]    = useState("");
   const [dateFrom, setDateFrom] = useState(format(subDays(new Date(), 30), "yyyy-MM-dd"));
@@ -27,7 +34,7 @@ export default function TranscriptsPage() {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <div className="space-y-5 max-w-6xl mx-auto">
+    <div className="flex-1 flex flex-col min-h-0 space-y-5">
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -53,57 +60,62 @@ export default function TranscriptsPage() {
           className="rounded-lg border border-border/60 bg-card px-3 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground w-44" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Card grid */}
-        <div className="lg:col-span-2 space-y-3">
-          {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />)
-          ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground rounded-xl border border-border/60 bg-card">
-              <FileText className="h-10 w-10 mb-3 opacity-30" />
-              <p className="text-sm">No transcripts found</p>
-            </div>
-          ) : (
-            items.map((t, i) => (
-              <button
-                key={t.id ?? i}
-                onClick={() => setSelected(t)}
-                className={cn("w-full rounded-xl border text-left p-4 hover:bg-muted/20 transition-colors space-y-2",
-                  selected?.id === t.id ? "border-amber-500/30 bg-amber-500/5" : "border-border/60 bg-card")}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <Globe className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" />
-                    <span className="text-xs text-blue-400 truncate">{t.domain || "—"}</span>
+      <div className="flex gap-3 flex-1 min-h-0">
+        {/* Card list */}
+        <div className={cn(
+          "overflow-hidden flex flex-col transition-all duration-200",
+          selected ? "w-[38%] flex-shrink-0" : "w-full"
+        )}>
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />)
+            ) : items.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground rounded-xl border border-border/60 bg-card">
+                <FileText className="h-10 w-10 mb-3 opacity-30" />
+                <p className="text-sm">No transcripts found</p>
+              </div>
+            ) : (
+              items.map((t, i) => (
+                <button
+                  key={t.id ?? i}
+                  onClick={() => setSelected(t)}
+                  className={cn("w-full rounded-xl border text-left p-4 hover:bg-muted/20 transition-colors space-y-2",
+                    selected?.id === t.id ? "border-amber-500/30 bg-amber-500/5" : "border-border/60 bg-card")}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Globe className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" />
+                      <span className="text-xs text-blue-400 truncate">{t.domain || "—"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {t.word_count && (
+                        <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">
+                          {t.word_count} words
+                        </span>
+                      )}
+                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                        {safeFormat(t.created_at, "MMM d")}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {t.word_count && (
-                      <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">
-                        {t.word_count} words
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-medium text-foreground line-clamp-1 flex-1">{t.page_title || "Untitled"}</p>
+                    {t.summary && (
+                      <span className="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/20 rounded px-1.5 py-0.5 font-medium flex-shrink-0">
+                        AI Summary
                       </span>
                     )}
-                    <span className="text-[10px] text-muted-foreground tabular-nums">
-                      {t.created_at ? format(new Date(t.created_at), "MMM d") : ""}
-                    </span>
                   </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-medium text-foreground line-clamp-1 flex-1">{t.page_title || "Untitled"}</p>
-                  {t.summary && (
-                    <span className="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/20 rounded px-1.5 py-0.5 font-medium flex-shrink-0">
-                      AI Summary
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {t.summary || t.page_text_preview || "—"}
-                </p>
-              </button>
-            ))
-          )}
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {t.summary || t.page_text_preview || "—"}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-2 pt-3 flex-shrink-0">
               <button disabled={page === 0} onClick={() => setPage(page - 1)} className="px-3 py-1.5 rounded-lg border border-border/60 text-xs disabled:opacity-40 hover:bg-muted/20">Prev</button>
               <span className="text-xs text-muted-foreground self-center">{page + 1} / {totalPages}</span>
               <button disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)} className="px-3 py-1.5 rounded-lg border border-border/60 text-xs disabled:opacity-40 hover:bg-muted/20">Next</button>
@@ -111,60 +123,55 @@ export default function TranscriptsPage() {
           )}
         </div>
 
-        {/* Full text panel */}
-        <div className="lg:col-span-3 rounded-xl border border-border/60 bg-card overflow-hidden sticky top-6">
-          {!selected ? (
-            <div className="flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
-              <FileText className="h-12 w-12 mb-3 opacity-20" />
-              <p className="text-sm">Select a transcript to read</p>
+        {/* Full text panel — only visible when a transcript is selected */}
+        {selected && (
+          <div className="flex-1 rounded-xl border border-border/60 bg-card overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border/40 flex-shrink-0">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground truncate">{selected.page_title || "Untitled"}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Globe className="h-3 w-3 text-blue-400" />
+                  <span className="text-xs text-blue-400">{selected.domain}</span>
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <span className="text-xs text-muted-foreground">{safeFormat(selected.created_at, "MMM d, yyyy HH:mm")}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 ml-2">
+                {selected.url && (
+                  <a href={selected.url} target="_blank" rel="noreferrer" className="p-1 rounded hover:bg-muted/40 transition-colors">
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                  </a>
+                )}
+                <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-muted/40 transition-colors">
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </div>
             </div>
-          ) : (
-            <div className="flex flex-col h-[80vh]">
-              <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground truncate">{selected.page_title || "Untitled"}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <Globe className="h-3 w-3 text-blue-400" />
-                    <span className="text-xs text-blue-400">{selected.domain}</span>
-                    <span className="text-xs text-muted-foreground">·</span>
-                    <span className="text-xs text-muted-foreground">{selected.created_at ? format(new Date(selected.created_at), "MMM d, yyyy HH:mm") : ""}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 ml-2">
-                  {selected.url && (
-                    <a href={selected.url} target="_blank" rel="noreferrer" className="p-1 rounded hover:bg-muted/40 transition-colors">
-                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                    </a>
-                  )}
-                  <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-muted/40 transition-colors">
-                    <X className="h-3.5 w-3.5 text-muted-foreground" />
-                  </button>
-                </div>
-              </div>
 
-              <div className="border-b border-border/40 px-5 py-3 flex-[2] flex flex-col gap-2 min-h-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Summary</p>
-                  <button className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 transition-colors">
-                    <NotebookPen className="h-3.5 w-3.5" />
-                    Create note from this transcript
-                  </button>
-                </div>
-                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3 flex-1 overflow-y-auto min-h-0">
-                  <p className="text-xs text-foreground leading-relaxed">
-                    {selected.summary || "No summary available"}
-                  </p>
-                </div>
+            {/* Summary section — 2/3 height */}
+            <div className="flex-[2] flex flex-col gap-2 min-h-0 px-5 py-3 border-b border-border/40 overflow-hidden">
+              <div className="flex items-center justify-between flex-shrink-0">
+                <p className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Summary</p>
+                <button className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 transition-colors">
+                  <NotebookPen className="h-3.5 w-3.5" />
+                  Create note from this transcript
+                </button>
               </div>
-
-              <div className="flex-[1] overflow-y-auto px-5 py-4 min-h-0">
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap font-sans">
-                  {selected.page_text_preview || selected.page_text || "No content available"}
+              <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3 flex-1 overflow-y-auto min-h-0">
+                <p className="text-xs text-foreground leading-relaxed">
+                  {selected.summary || "No summary available"}
                 </p>
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Full text — 1/3 height */}
+            <div className="flex-[1] overflow-y-auto px-5 py-4 min-h-0">
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap font-sans">
+                {selected.page_text_preview || selected.page_text || "No content available"}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

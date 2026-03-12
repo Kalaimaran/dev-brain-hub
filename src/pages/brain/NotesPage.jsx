@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { NotebookPen, Plus, Trash2, Edit3, Search, Check } from "lucide-react";
+import { NotebookPen, Plus, Trash2, Edit3, Search, Check, X } from "lucide-react";
 import { notesApi } from "@/lib/api";
 import TagInput from "@/components/brain/TagInput";
 import {
@@ -180,6 +180,7 @@ export default function NotesPage() {
   const [tagFilter,   setTagFilter] = useState("");
   const [sortAsc,     setSortAsc]  = useState(false);
   const [current,     setCurrent]  = useState(EMPTY_NOTE);
+  const [showEditor,  setShowEditor] = useState(false);
   const [saveStatus,  setSave]     = useState("idle"); // idle | saving | saved
   const [noteToDelete, setNoteToDelete] = useState(null);
   const debounceTimer = useRef(null);
@@ -259,14 +260,22 @@ export default function NotesPage() {
     clearTimeout(debounceTimer.current);
     setCurrent(EMPTY_NOTE);
     setSave("idle");
+    setShowEditor(true);
+  };
+
+  const closeEditor = () => {
+    clearTimeout(debounceTimer.current);
+    setCurrent(EMPTY_NOTE);
+    setSave("idle");
+    setShowEditor(false);
   };
   const currentUpdatedAt = current?.updated_at || current?.created_at;
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex h-[calc(100vh-5rem)] gap-4">
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex flex-1 min-h-0 gap-4">
         {/* Left panel */}
-        <div className="w-64 flex-shrink-0 flex flex-col gap-3">
+        <div className={cn("flex-shrink-0 flex flex-col gap-3 transition-all duration-200", showEditor ? "w-[38%]" : "w-full")}>
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
               <NotebookPen className="h-5 w-5 text-violet-400" />
@@ -314,7 +323,7 @@ export default function NotesPage() {
               <p className="text-xs text-muted-foreground text-center py-8">No notes yet</p>
             ) : notes.map((n) => (
               <button key={n.id}
-                onClick={() => { setCurrent(normalizeNote(n)); setSave("idle"); }}
+                onClick={() => { setCurrent(normalizeNote(n)); setSave("idle"); setShowEditor(true); }}
                 className={cn("w-full rounded-lg border text-left px-3 py-2.5 transition-colors",
                   current.id === n.id ? "border-violet-500/30 bg-violet-500/10" : "border-border/60 bg-card hover:bg-muted/20")}>
                 <p className="text-sm font-medium text-foreground truncate">{n.title || "Untitled"}</p>
@@ -332,7 +341,8 @@ export default function NotesPage() {
           </div>
         </div>
 
-        {/* Right editor */}
+        {/* Right editor — only visible when showEditor is true */}
+        {showEditor && (
         <div className="flex-1 rounded-xl border border-border/60 bg-card overflow-hidden flex flex-col">
           {/* Editor toolbar */}
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40">
@@ -354,6 +364,10 @@ export default function NotesPage() {
                   <Trash2 className="h-3 w-3" />Delete
                 </button>
               )}
+              <button onClick={closeEditor}
+                className="p-1 rounded hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground">
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
 
@@ -382,6 +396,7 @@ export default function NotesPage() {
             />
           </div>
         </div>
+        )}
       </div>
 
       <AlertDialog open={Boolean(noteToDelete)} onOpenChange={(open) => { if (!open) setNoteToDelete(null); }}>
