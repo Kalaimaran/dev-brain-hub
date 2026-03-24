@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { NotebookPen, Plus, Trash2, Edit3, Search, Check, X } from "lucide-react";
@@ -175,6 +176,8 @@ const toRenderableMarkdown = (content = "") => {
 };
 
 export default function NotesPage() {
+  const { id: noteId } = useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [search,      setSearch]   = useState("");
   const [tagFilter,   setTagFilter] = useState("");
@@ -184,11 +187,18 @@ export default function NotesPage() {
   const [saveStatus,  setSave]     = useState("idle"); // idle | saving | saved
   const [noteToDelete, setNoteToDelete] = useState(null);
   const debounceTimer = useRef(null);
+  const openedNoteIdRef = useRef(null);
 
   const { data } = useQuery({
     queryKey: ["notes", { q: search, tag: tagFilter }],
     queryFn:  () => notesApi.list({ q: search || undefined, tag: tagFilter || undefined, limit: 100 })
                     .then((r) => r.data?.data ?? r.data),
+  });
+
+  const { data: specificNoteData } = useQuery({
+    queryKey: ["note", noteId],
+    queryFn:  () => notesApi.get(noteId).then((r) => r.data?.data ?? r.data),
+    enabled:  !!noteId,
   });
 
   const notes = (Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [])
@@ -199,12 +209,37 @@ export default function NotesPage() {
       : new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0)
   );
 
+  // Sync URL param → open the matching note in the editor
+  useEffect(() => {
+    if (!noteId) { openedNoteIdRef.current = null; return; }
+    if (openedNoteIdRef.current === noteId) return;
+
+    const fromList = notes.find((n) => String(n.id) === String(noteId));
+    if (fromList) {
+      openedNoteIdRef.current = noteId;
+      setCurrent(normalizeNote(fromList));
+      setShowEditor(true);
+      return;
+    }
+    if (specificNoteData?.id && String(specificNoteData.id) === String(noteId)) {
+      openedNoteIdRef.current = noteId;
+      setCurrent(normalizeNote(specificNoteData));
+      setShowEditor(true);
+    }
+  }, [noteId, notes, specificNoteData]);
+
   // Collect all tags
   const allTags = [...new Set(notes.flatMap((n) => normalizeTags(n?.tags)))];
 
   const createMutation = useMutation({
     mutationFn: (body) => notesApi.create(body).then((r) => r.data?.data ?? r.data),
-    onSuccess:  (note) => { qc.invalidateQueries({ queryKey: ["notes"] }); setCurrent(normalizeNote(note)); setSave("saved"); },
+    onSuccess:  (note) => {
+      qc.invalidateQueries({ queryKey: ["notes"] });
+      const normalized = normalizeNote(note);
+      setCurrent(normalized);
+      setSave("saved");
+      if (note?.id) navigate(`/notes/${note.id}`, { replace: true });
+    },
   });
 
   const updateMutation = useMutation({
@@ -268,6 +303,7 @@ export default function NotesPage() {
     setCurrent(EMPTY_NOTE);
     setSave("idle");
     setShowEditor(false);
+    navigate("/notes");
   };
   const currentUpdatedAt = current?.updated_at || current?.created_at;
 
@@ -323,7 +359,7 @@ export default function NotesPage() {
               <p className="text-xs text-muted-foreground text-center py-8">No notes yet</p>
             ) : notes.map((n) => (
               <button key={n.id}
-                onClick={() => { setCurrent(normalizeNote(n)); setSave("idle"); setShowEditor(true); }}
+                onClick={() => { setCurrent(normalizeNote(n)); setSave("idle"); setShowEditor(true); navigate(`/notes/${n.id}`); }}
                 className={cn("w-full rounded-lg border text-left px-3 py-2.5 transition-colors",
                   current.id === n.id ? "border-violet-500/30 bg-violet-500/10" : "border-border/60 bg-card hover:bg-muted/20")}>
                 <p className="text-sm font-medium text-foreground truncate">{n.title || "Untitled"}</p>

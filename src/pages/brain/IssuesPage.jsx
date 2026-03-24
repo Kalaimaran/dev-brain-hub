@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
@@ -376,6 +377,8 @@ function IssueForm({ initial = EMPTY_ISSUE, onSave, onCancel, saving }) {
 
 /* ── Main page ─────────────────────────────────────────────── */
 export default function IssuesPage() {
+  const { id: issueId } = useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [statusFilter, setStatus] = useState("");
   const [tagFilter, setTag] = useState("");
@@ -384,6 +387,7 @@ export default function IssuesPage() {
   const [formMode, setFormMode] = useState(null);
   const [slideover, setSlide] = useState(false);
   const [issueToDelete, setIssueToDelete] = useState(null);
+  const openedIssueIdRef = useRef(null);
 
   const { data } = useQuery({
     queryKey: ["issues", { status: statusFilter, tag: tagFilter, q: search }],
@@ -398,11 +402,34 @@ export default function IssuesPage() {
         .then((r) => r.data?.data ?? r.data),
   });
 
+  const { data: specificIssueData } = useQuery({
+    queryKey: ["issue", issueId],
+    queryFn: () => issuesApi.get(issueId).then((r) => r.data?.data ?? r.data),
+    enabled: !!issueId,
+  });
+
   const issues = Array.isArray(data?.items)
     ? data.items
     : Array.isArray(data)
       ? data
       : [];
+  // Sync URL param → select the matching issue in the detail panel
+  useEffect(() => {
+    if (!issueId) { openedIssueIdRef.current = null; return; }
+    if (openedIssueIdRef.current === issueId) return;
+
+    const fromList = issues.find((i) => String(i.id) === String(issueId));
+    if (fromList) {
+      openedIssueIdRef.current = issueId;
+      setSelected(fromList);
+      return;
+    }
+    if (specificIssueData?.id && String(specificIssueData.id) === String(issueId)) {
+      openedIssueIdRef.current = issueId;
+      setSelected(specificIssueData);
+    }
+  }, [issueId, issues, specificIssueData]);
+
   const total = issues.length;
   const open = issues.filter((i) => i.status === "open").length;
   const resolved = issues.filter((i) => i.status === "resolved").length;
@@ -430,7 +457,10 @@ export default function IssuesPage() {
     mutationFn: (id) => issuesApi.remove(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["issues"] });
-      if (selected?.id === issueToDelete?.id) setSelected(null);
+      if (selected?.id === issueToDelete?.id) {
+        setSelected(null);
+        navigate("/issues");
+      }
     },
   });
 
@@ -565,7 +595,7 @@ export default function IssuesPage() {
                   key={issue.id}
                   issue={issue}
                   isSelected={selected?.id === issue.id}
-                  onClick={() => setSelected(issue)}
+                  onClick={() => { setSelected(issue); navigate(`/issues/${issue.id}`); }}
                 />
               ))}
             </div>
@@ -621,7 +651,7 @@ export default function IssuesPage() {
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
                 <button
-                  onClick={() => setSelected(null)}
+                  onClick={() => { setSelected(null); navigate("/issues"); }}
                   className="p-1.5 rounded hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-3.5 w-3.5" />

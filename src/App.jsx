@@ -42,7 +42,9 @@ const App = () => (
                 <Route path="/web"         element={<WebActivityPage />} />
                 <Route path="/transcripts" element={<TranscriptsPage />} />
                 <Route path="/notes"       element={<NotesPage />} />
+                <Route path="/notes/:id"   element={<NotesPage />} />
                 <Route path="/issues"      element={<IssuesPage />} />
+                <Route path="/issues/:id"  element={<IssuesPage />} />
                 <Route path="/search"      element={<GlobalSearchPage />} />
                 <Route path="/profile"     element={<ProfilePage />} />
               </Route>
